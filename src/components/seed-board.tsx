@@ -80,10 +80,10 @@ export function SeedBoard({ kind, copy }: { kind: SeedKind; copy: SeedBoardCopy 
   }
 
   function confirmDelete(seed: Seed) {
-    Alert.alert('この種を取り下げますか？', 'これまでに実ったものは、みんなの手持ちに残ります。', [
+    Alert.alert('この種を削除しますか？', 'これまでに実ったものは、みんなの手持ちに残ります。', [
       { text: 'やめる', style: 'cancel' },
       {
-        text: '取り下げる',
+        text: '削除する',
         style: 'destructive',
         onPress: () => deleteSeed(seed.id).catch((e) => console.warn(e)),
       },

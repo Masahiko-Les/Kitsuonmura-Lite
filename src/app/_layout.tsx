@@ -1,8 +1,8 @@
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, router, Stack, ThemeProvider, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BodyText, SerifText } from '@/components/ui';
 import { Colors, HeaderOptions, Spacing } from '@/constants/theme';
@@ -23,6 +23,18 @@ const villageTheme = {
   },
 };
 
+/** 利用規約などのモーダルを閉じる。戻る先がない時は、今の状態の最初の画面へ行く。 */
+function CloseButton({ fallback }: { fallback: Href }) {
+  return (
+    <Pressable
+      hitSlop={12}
+      accessibilityRole="button"
+      onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))}>
+      <Text style={styles.closeLabel}>閉じる</Text>
+    </Pressable>
+  );
+}
+
 function RootNavigator() {
   const { status } = useSession();
 
@@ -33,18 +45,29 @@ function RootNavigator() {
   if (status === 'loading') return null;
 
   // 起動 → 匿名で村に入る → 村人登録（規約に同意）→ 3つのタブ（SPEC.md「画面構成」）
+  // 見られない画面に来た時の行き先を、今の状態に合わせて明示する。
+  // 指定しないとアンカー任せになり、村人登録ではなく利用規約に飛ばされてしまう。
+  const home: Href =
+    status === 'signed-out' ? '/sign-in' : status === 'needs-registration' ? '/register' : '/';
   return (
     <Stack screenOptions={{ ...HeaderOptions, contentStyle: { backgroundColor: Colors.background } }}>
-      <Stack.Protected guard={status === 'signed-out'}>
+      <Stack.Protected guard={status === 'signed-out'} redirectTo={home}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'needs-registration'}>
+      <Stack.Protected guard={status === 'needs-registration'} redirectTo={home}>
         <Stack.Screen name="register" options={{ title: '村人登録', headerBackVisible: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'ready'}>
+      <Stack.Protected guard={status === 'ready'} redirectTo={home}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Screen name="terms" options={{ title: '利用規約', presentation: 'modal' }} />
+      <Stack.Screen
+        name="terms"
+        options={{
+          title: '利用規約',
+          presentation: 'modal',
+          headerRight: () => <CloseButton fallback={home} />,
+        }}
+      />
     </Stack>
   );
 }
@@ -89,5 +112,9 @@ const styles = StyleSheet.create({
   },
   setupTitle: {
     fontSize: 22,
+  },
+  closeLabel: {
+    fontSize: 16,
+    color: Colors.ember,
   },
 });
