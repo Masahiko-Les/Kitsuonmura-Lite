@@ -66,13 +66,12 @@ firebase deploy --only firestore
 npx expo start
 ```
 
-EAS でビルドする場合、`.env.local` は git に入らないのでビルドには送られません。
-Firebase の値を EAS の環境変数にも登録してください（ウェブ用の設定値なので、アプリに埋め込まれても問題ありません）。
+EAS でビルドする場合、`.env.local` は git に入らずビルドに送られないため、同じ値を `eas.json` の
+`build.base.env` に書いてあります（ウェブ用の設定値で、アプリに埋め込まれるものなので公開されても問題ありません）。
+Firebase の設定を変えたら、`.env.local` と `eas.json` の両方を直してください。
 
 ```bash
 npx eas-cli@latest init
-npx eas-cli@latest env:create --environment preview --visibility plaintext \
-  --name EXPO_PUBLIC_FIREBASE_API_KEY --value ...   # 6つの値それぞれ
 npx eas-cli@latest build --profile preview --platform ios
 ```
 
