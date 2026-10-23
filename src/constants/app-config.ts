@@ -13,6 +13,8 @@ export const TERMS_VERSION = 1;
 export const CRISIS_SUPPORT_URL = 'https://www.mhlw.go.jp/mamorouyokokoro/';
 
 export const SEED_MAX_LENGTH = 100;
+/** 砂漠の種の「苦労したこと」「どう向き合ったか」それぞれの上限。 */
+export const DESERT_FIELD_MAX_LENGTH = 200;
 export const POST_MAX_LENGTH = 140;
 export const POST_LIFETIME_MS = 24 * 60 * 60 * 1000;
 /** この件数の通報で自動的に非表示にする。 */

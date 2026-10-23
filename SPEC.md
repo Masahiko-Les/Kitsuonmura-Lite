@@ -45,9 +45,9 @@
 - 贈られると、投稿者に「トマトが届きました」と匿名で伝わる
 - 受け取った贈り物は手持ちに加わり、燃え尽きた後も残る。もう一度誰かに贈ることもできる
 
-### 砂漠（挑戦の種・公開）
+### 砂漠（苦労と向き合い方の種・公開）
 
-- 挑戦を一言で書き、種として植える（公開・投稿者は匿名）
+- 「① 苦労したこと」「② それにどう向き合ったか」の二段で書き、種として植える（それぞれ200文字まで。公開・投稿者は匿名）
 - 水やりのルールは農園と同じ。実るのは花で、植えた人と水やりした人の両方に届く
 - 種は消えない
 
@@ -60,7 +60,7 @@
 | コレクション | 主なフィールド | 備考 |
 | --- | --- | --- |
 | `users/{uid}` | createdAt, blockedUids[], termsVersion | Apple認証のuidで作成。名前は持たない。termsVersion は同意した規約の版 |
-| `seeds/{seedId}` | authorUid, kind（farm / desert）, text, createdAt, waterCount, reportCount, hidden | 消えない |
+| `seeds/{seedId}` | authorUid, kind（farm / desert）, text, response（砂漠のみ）, createdAt, waterCount, reportCount, hidden | 消えない。砂漠は text＝苦労したこと、response＝どう向き合ったか |
 | `waterings/{seedId_uid}` | seedId, seedAuthorUid, waterUid, kind, cropId, createdAt | ドキュメントIDで1人1回を保証。自分の種にも可 |
 | `posts/{postId}` | authorUid, text, createdAt, expiresAt, giftCount, reportCount, hidden | expiresAt = createdAt + 24時間 |
 | `gifts/{giftId}` | postId, fromUid, toUid, itemId（tomato・sakura など）, createdAt | 受け取った側は燃え尽き後も一覧で見られる |
@@ -100,7 +100,7 @@
 
 - **農園**：苦労を種として植える／見た人が水やり→野菜／双方に野菜が届く（野菜を焚き火で贈る）
 - **焚き火**：思ったことをくべる／みんなの火が並ぶ／24時間で燃え尽きる／野菜や花を贈れる
-- **砂漠**：挑戦を種として植える／見た人が水やり→花／双方に花が届く／種は消えない（花を焚き火で贈る）
+- **砂漠**：苦労とその向き合い方を種として植える／見た人が水やり→花／双方に花が届く／種は消えない（花を焚き火で贈る）
 
 このほか、設定画面に「ブロック一覧」「アカウント削除」「利用規約・プライバシーポリシー」「お問い合わせ」を置く。
 
@@ -145,7 +145,7 @@
 
 ### 細かいルール
 
-- 種の本文：1〜100文字
+- 種の本文：農園は1〜100文字。砂漠は「苦労したこと」「どう向き合ったか」がそれぞれ1〜200文字
 - 種の一覧：新しい順
 - 退会時：その人の種・焚き火の投稿・アカウントを削除する。ただし水やり記録は残し、水やりした相手の手持ちの作物が減らないようにする
 - ブロック時：ブロックした人の種と焚き火の投稿を、農園・砂漠・焚き火のすべてで非表示にする

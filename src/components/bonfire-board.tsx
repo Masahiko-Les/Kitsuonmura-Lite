@@ -102,12 +102,11 @@ export function BonfireBoard() {
               description="焚き火を囲みながら、吃音にまつわる日々の気持ちや出来事を、ポツリポツリとくべてみませんか。くべたひとことは24時間で燃え尽きます。農園や砂漠で実った野菜や花を、だれかのひとことに贈ることもできます。"
             />
             <Composer
-              placeholder="思ったことを、焚き火にくべてみましょう。"
+              fields={[{ placeholder: '思ったことを、焚き火にくべてみましょう。', maxLength: POST_MAX_LENGTH }]}
               submitLabel="焚き火にくべる"
               pendingLabel="くべています…"
-              maxLength={POST_MAX_LENGTH}
               variant="ember"
-              onSubmit={(text) => createPost(uid, text)}
+              onSubmit={([text]) => createPost(uid, text)}
             />
             {loadError ? (
               <MutedText style={styles.empty}>

@@ -2,51 +2,64 @@ import { useState } from 'react';
 import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import { CrisisSupportModal } from '@/components/crisis-support-modal';
-import { MutedText, PillButton } from '@/components/ui';
+import { MutedText, PillButton, SerifText } from '@/components/ui';
 import { alpha, Colors, Fonts, Spacing } from '@/constants/theme';
 import { checkText, MODERATION_MESSAGES, needsCrisisSupport } from '@/lib/moderation';
 
+export interface ComposerField {
+  /** 複数の欄がある時だけ見出しを出す（例：「① 苦労したこと」）。 */
+  label?: string;
+  placeholder: string;
+  maxLength: number;
+}
+
+function lengthOf(text: string) {
+  return [...text.trim()].length;
+}
+
 /**
- * 種を植える・焚き火にくべる、の共通の入力欄。
+ * 種を植える・焚き火にくべる、の共通の入力欄。欄はいくつでも並べられ、すべて書くと送れる。
  * NGワードと連絡先は送信前に止め、つらい言葉には送信後に相談窓口をそっと案内する。
  */
 export function Composer({
-  placeholder,
+  fields,
   submitLabel,
   pendingLabel,
-  maxLength,
   variant,
   onSubmit,
 }: {
-  placeholder: string;
+  fields: ComposerField[];
   submitLabel: string;
   pendingLabel: string;
-  maxLength: number;
   variant: 'leaf' | 'ember';
-  onSubmit: (text: string) => Promise<void>;
+  /** 欄と同じ順で、前後の空白を除いた文字列を受け取る。 */
+  onSubmit: (values: string[]) => Promise<void>;
 }) {
-  const [text, setText] = useState('');
+  const [values, setValues] = useState(() => fields.map(() => ''));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCrisisSupport, setShowCrisisSupport] = useState(false);
 
-  const trimmed = text.trim();
-  const length = [...trimmed].length;
-  const tooLong = length > maxLength;
+  const lengths = values.map(lengthOf);
+  const tooLong = fields.map((field, i) => lengths[i] > field.maxLength);
+  const canSubmit = lengths.every((length) => length > 0) && !tooLong.some(Boolean);
 
   async function handleSubmit() {
-    if (length === 0 || tooLong || pending) return;
-    const result = checkText(trimmed);
-    if (!result.ok) {
-      setError(MODERATION_MESSAGES[result.reason]);
-      return;
+    if (!canSubmit || pending) return;
+    const trimmed = values.map((value) => value.trim());
+    for (const text of trimmed) {
+      const result = checkText(text);
+      if (!result.ok) {
+        setError(MODERATION_MESSAGES[result.reason]);
+        return;
+      }
     }
     setError(null);
     setPending(true);
     try {
       await onSubmit(trimmed);
-      setText('');
-      if (needsCrisisSupport(trimmed)) setShowCrisisSupport(true);
+      setValues(fields.map(() => ''));
+      if (trimmed.some(needsCrisisSupport)) setShowCrisisSupport(true);
     } catch (e) {
       console.warn(e);
       Alert.alert('うまく届きませんでした', '通信状態を確かめて、もう一度お試しください。');
@@ -57,34 +70,38 @@ export function Composer({
 
   return (
     <View style={styles.container}>
-      <TextInput
-        value={text}
-        onChangeText={(value) => {
-          setText(value);
-          if (error) setError(null);
-        }}
-        placeholder={placeholder}
-        placeholderTextColor={alpha(Colors.ink, 0.4)}
-        multiline
-        style={[styles.input, (error || tooLong) && { borderColor: Colors.danger }]}
-        accessibilityLabel={placeholder}
-      />
+      {fields.map((field, i) => (
+        <View key={i} style={styles.field}>
+          {field.label ? <SerifText style={styles.label}>{field.label}</SerifText> : null}
+          <TextInput
+            value={values[i]}
+            onChangeText={(value) => {
+              setValues((prev) => prev.map((v, j) => (j === i ? value : v)));
+              if (error) setError(null);
+            }}
+            placeholder={field.placeholder}
+            placeholderTextColor={alpha(Colors.ink, 0.4)}
+            multiline
+            style={[styles.input, tooLong[i] && { borderColor: Colors.danger }]}
+            accessibilityLabel={field.label ?? field.placeholder}
+          />
+          <MutedText style={[styles.counter, tooLong[i] && { color: Colors.danger }]}>
+            {lengths[i]} / {field.maxLength}
+          </MutedText>
+        </View>
+      ))}
       <MutedText style={styles.notice}>
         年齢・学校・住んでいる場所など、あなたが誰か分かることは書かないでください。
       </MutedText>
       {error ? <MutedText style={styles.error}>{error}</MutedText> : null}
-      <View style={styles.footer}>
-        <MutedText style={[styles.counter, tooLong && { color: Colors.danger }]}>
-          {length} / {maxLength}
-        </MutedText>
-        <PillButton
-          label={pending ? pendingLabel : submitLabel}
-          onPress={handleSubmit}
-          variant={variant}
-          disabled={length === 0 || tooLong}
-          loading={pending}
-        />
-      </View>
+      <PillButton
+        label={pending ? pendingLabel : submitLabel}
+        onPress={handleSubmit}
+        variant={variant}
+        disabled={!canSubmit}
+        loading={pending}
+        style={styles.submit}
+      />
       <CrisisSupportModal
         visible={showCrisisSupport}
         onClose={() => setShowCrisisSupport(false)}
@@ -97,6 +114,12 @@ const styles = StyleSheet.create({
   container: {
     gap: Spacing.sm,
     marginBottom: Spacing.xl,
+  },
+  field: {
+    gap: Spacing.xs,
+  },
+  label: {
+    fontSize: 15,
   },
   input: {
     minHeight: 88,
@@ -113,6 +136,10 @@ const styles = StyleSheet.create({
     color: Colors.ink,
     textAlignVertical: 'top',
   },
+  counter: {
+    fontSize: 12,
+    textAlign: 'right',
+  },
   notice: {
     fontSize: 12,
     lineHeight: 18,
@@ -120,12 +147,7 @@ const styles = StyleSheet.create({
   error: {
     color: Colors.danger,
   },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  counter: {
-    fontSize: 12,
+  submit: {
+    alignSelf: 'flex-end',
   },
 });

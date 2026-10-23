@@ -1,4 +1,5 @@
 import {
+  addDoc,
   arrayRemove,
   arrayUnion,
   collection,
@@ -73,18 +74,18 @@ export function subscribeSeeds(
   return onSnapshot(q, (snapshot) => onChange(toList<Seed>(snapshot)), onError);
 }
 
-export async function plantSeed(uid: string, kind: SeedKind, text: string) {
-  const batch = writeBatch(db);
-  batch.set(doc(collection(db, 'seeds')), {
+/** 砂漠の種は「苦労したこと（text）」と「どう向き合ったか（response）」の二段。農園は text だけ。 */
+export async function plantSeed(uid: string, kind: SeedKind, text: string, response?: string) {
+  await addDoc(collection(db, 'seeds'), {
     authorUid: uid,
     kind,
     text,
+    ...(response !== undefined ? { response } : {}),
     createdAt: serverTimestamp(),
     waterCount: 0,
     reportCount: 0,
     hidden: false,
   });
-  await batch.commit();
 }
 
 /**

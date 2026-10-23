@@ -15,6 +15,8 @@ export interface Seed {
   authorUid: string;
   kind: SeedKind;
   text: string;
+  /** 砂漠の種だけ：苦労にどう向き合ったか。 */
+  response?: string;
   createdAt: Timestamp | null;
   waterCount: number;
   reportCount: number;

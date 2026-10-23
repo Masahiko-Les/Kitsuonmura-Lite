@@ -73,11 +73,26 @@ service cloud.firestore {
     // ---- 種（農園・砂漠） ----
     match /seeds/{seedId} {
       allow read: if signedIn();
+      // 農園は text（100字まで）だけ。砂漠は「苦労したこと（text）」と「どう向き合ったか（response）」の
+      // 二段で、それぞれ200字まで。src/constants/app-config.ts と合わせること。
       allow create: if isSelf(request.resource.data.authorUid)
-        && request.resource.data.keys().hasOnly(
-          ['authorUid', 'kind', 'text', 'createdAt', 'waterCount', 'reportCount', 'hidden'])
-        && request.resource.data.kind in ['farm', 'desert']
-        && validText(100)
+        && (
+          (
+            request.resource.data.kind == 'farm'
+            && request.resource.data.keys().hasOnly(
+              ['authorUid', 'kind', 'text', 'createdAt', 'waterCount', 'reportCount', 'hidden'])
+            && validText(100)
+          )
+          || (
+            request.resource.data.kind == 'desert'
+            && request.resource.data.keys().hasOnly(
+              ['authorUid', 'kind', 'text', 'response', 'createdAt', 'waterCount', 'reportCount', 'hidden'])
+            && validText(200)
+            && request.resource.data.response is string
+            && request.resource.data.response.size() >= 1
+            && request.resource.data.response.size() <= 200
+          )
+        )
         && request.resource.data.createdAt == request.time
         && request.resource.data.waterCount == 0
         && request.resource.data.reportCount == 0

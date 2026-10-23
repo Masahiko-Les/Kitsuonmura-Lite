@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Composer } from '@/components/composer';
+import { Composer, type ComposerField } from '@/components/composer';
 import {
   BodyText,
   Card,
@@ -11,7 +11,7 @@ import {
   PillButton,
   SerifText,
 } from '@/components/ui';
-import { REPORT_HIDE_THRESHOLD, SEED_MAX_LENGTH } from '@/constants/app-config';
+import { REPORT_HIDE_THRESHOLD } from '@/constants/app-config';
 import type { CatalogItem, SeedKind } from '@/constants/catalog';
 import { alpha, Colors, Radius, Spacing } from '@/constants/theme';
 import { useContentMenu } from '@/hooks/use-content-menu';
@@ -24,7 +24,11 @@ export interface SeedBoardCopy {
   title: string;
   description: string;
   icon: number;
-  placeholder: string;
+  /**
+   * 種を植える欄。1つ目が本文（text）、2つ目があれば「どう向き合ったか」（response）。
+   * 2つ以上ある時は、種のカードにも各欄の見出しを出す。
+   */
+  fields: ComposerField[];
   plantedMessage: string;
   emptyMessage: string;
   /** 実るものの呼び名（野菜・花）。 */
@@ -105,13 +109,12 @@ export function SeedBoard({ kind, copy }: { kind: SeedKind; copy: SeedBoardCopy 
           <>
             <FacilityHeader title={copy.title} description={copy.description} icon={copy.icon} />
             <Composer
-              placeholder={copy.placeholder}
+              fields={copy.fields}
               submitLabel="種を植える"
               pendingLabel="植えています…"
-              maxLength={SEED_MAX_LENGTH}
               variant="leaf"
-              onSubmit={async (text) => {
-                await plantSeed(uid, kind, text);
+              onSubmit={async ([text, response]) => {
+                await plantSeed(uid, kind, text, response);
                 setShowPlanted(true);
               }}
             />
@@ -141,7 +144,20 @@ export function SeedBoard({ kind, copy }: { kind: SeedKind; copy: SeedBoardCopy 
                   <Text style={styles.menu}>…</Text>
                 </Pressable>
               </View>
-              <BodyText>{seed.text}</BodyText>
+              {copy.fields.length > 1 ? (
+                <View style={styles.parts}>
+                  {[seed.text, seed.response].map((part, i) =>
+                    part ? (
+                      <View key={i}>
+                        <SerifText style={styles.partLabel}>{copy.fields[i]?.label}</SerifText>
+                        <BodyText>{part}</BodyText>
+                      </View>
+                    ) : null,
+                  )}
+                </View>
+              ) : (
+                <BodyText>{seed.text}</BodyText>
+              )}
               <View style={styles.cardFooter}>
                 <MutedText>
                   💧 {seed.waterCount}
@@ -221,6 +237,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: alpha(Colors.ink, 0.45),
     paddingHorizontal: Spacing.xs,
+  },
+  parts: {
+    gap: Spacing.md,
+  },
+  partLabel: {
+    fontSize: 13,
+    color: alpha(Colors.ink, 0.7),
+    marginBottom: 2,
   },
   cardFooter: {
     flexDirection: 'row',
