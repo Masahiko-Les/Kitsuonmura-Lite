@@ -1,0 +1,175 @@
+rules_version = '2';
+
+// 吃音村Lite のセキュリティルール（SPEC.md「セキュリティルール」）
+// - 種・投稿の作成と削除は本人のみ。本文の書き換えは不可。
+// - waterCount・giftCount・reportCount は、他人でも「1だけ増やす」操作のみ。
+//   しかも水やり・贈り物・通報の記録を同じバッチで作った時だけ増やせる。
+// - 他人の持ち物は直接書き換えない（手持ちは記録から数える）。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function docPath(collection, id) {
+      return /databases/$(database)/documents/$(collection)/$(id);
+    }
+
+    // src/constants/catalog.ts と合わせること。
+    function cropIds() {
+      return ['tomato', 'potato', 'pumpkin', 'corn', 'carrot'];
+    }
+
+    function flowerIds() {
+      return ['sakura', 'tulip', 'hibiscus', 'sunflower', 'margaret'];
+    }
+
+    function itemIdsFor(kind) {
+      return kind == 'farm' ? cropIds() : flowerIds();
+    }
+
+    function onlyChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function incrementedByOne(field) {
+      return request.resource.data[field] == resource.data[field] + 1;
+    }
+
+    function validText(maxLength) {
+      let text = request.resource.data.text;
+      return text is string && text.size() >= 1 && text.size() <= maxLength;
+    }
+
+    // 通報の記録をこのバッチで新しく作った時だけ reportCount を1増やせる（1人1回）。
+    function reportedNow(targetType, targetId) {
+      let reportId = targetType + '_' + targetId + '_' + request.auth.uid;
+      return onlyChanged(['reportCount'])
+        && incrementedByOne('reportCount')
+        && !exists(docPath('reports', reportId))
+        && existsAfter(docPath('reports', reportId));
+    }
+
+    // ---- 村人 ----
+    match /users/{uid} {
+      allow read, delete: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['createdAt', 'blockedUids', 'termsVersion'])
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.blockedUids == []
+        && request.resource.data.termsVersion is int;
+      allow update: if isSelf(uid)
+        && onlyChanged(['blockedUids', 'termsVersion'])
+        && request.resource.data.blockedUids is list
+        && request.resource.data.blockedUids.size() <= 1000
+        && request.resource.data.termsVersion is int;
+    }
+
+    // ---- 種（農園・砂漠） ----
+    match /seeds/{seedId} {
+      allow read: if signedIn();
+      allow create: if isSelf(request.resource.data.authorUid)
+        && request.resource.data.keys().hasOnly(
+          ['authorUid', 'kind', 'text', 'createdAt', 'waterCount', 'reportCount', 'hidden'])
+        && request.resource.data.kind in ['farm', 'desert']
+        && validText(100)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.waterCount == 0
+        && request.resource.data.reportCount == 0
+        && request.resource.data.hidden == false;
+      allow update: if signedIn() && (
+        (
+          onlyChanged(['waterCount'])
+          && incrementedByOne('waterCount')
+          && !exists(docPath('waterings', seedId + '_' + request.auth.uid))
+          && existsAfter(docPath('waterings', seedId + '_' + request.auth.uid))
+        )
+        || reportedNow('seed', seedId)
+      );
+      allow delete: if isSelf(resource.data.authorUid);
+    }
+
+    // ---- 水やり（ドキュメントID seedId_uid で1人1回。自分の種にも可） ----
+    match /waterings/{wateringId} {
+      allow read: if signedIn()
+        && (resource.data.waterUid == request.auth.uid
+          || resource.data.seedAuthorUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+          ['seedId', 'seedAuthorUid', 'waterUid', 'kind', 'cropId', 'createdAt'])
+        && wateringId == request.resource.data.seedId + '_' + request.auth.uid
+        && request.resource.data.waterUid == request.auth.uid
+        && request.resource.data.seedAuthorUid == get(docPath('seeds', request.resource.data.seedId)).data.authorUid
+        && request.resource.data.kind == get(docPath('seeds', request.resource.data.seedId)).data.kind
+        && request.resource.data.cropId in itemIdsFor(request.resource.data.kind)
+        && request.resource.data.createdAt == request.time
+        && getAfter(docPath('seeds', request.resource.data.seedId)).data.waterCount
+          == get(docPath('seeds', request.resource.data.seedId)).data.waterCount + 1;
+      // 退会後も相手の手持ちが減らないよう、水やりの記録は消さない。
+      allow update, delete: if false;
+    }
+
+    // ---- 焚き火 ----
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if isSelf(request.resource.data.authorUid)
+        && request.resource.data.keys().hasOnly(
+          ['authorUid', 'text', 'createdAt', 'expiresAt', 'giftCount', 'reportCount', 'hidden'])
+        && validText(140)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time + duration.value(23, 'h')
+        && request.resource.data.expiresAt < request.time + duration.value(25, 'h')
+        && request.resource.data.giftCount == 0
+        && request.resource.data.reportCount == 0
+        && request.resource.data.hidden == false;
+      allow update: if signedIn() && (
+        (
+          onlyChanged(['giftCount'])
+          && incrementedByOne('giftCount')
+          && resource.data.authorUid != request.auth.uid
+          && resource.data.expiresAt > request.time
+        )
+        || reportedNow('post', postId)
+      );
+      allow delete: if isSelf(resource.data.authorUid);
+    }
+
+    // ---- 贈り物（他の人のひとことにだけ贈れる。言葉は添えられない） ----
+    match /gifts/{giftId} {
+      allow read: if signedIn()
+        && (resource.data.fromUid == request.auth.uid
+          || resource.data.toUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['postId', 'fromUid', 'toUid', 'itemId', 'createdAt'])
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.itemId in cropIds().concat(flowerIds())
+        && request.resource.data.toUid == get(docPath('posts', request.resource.data.postId)).data.authorUid
+        && request.resource.data.toUid != request.auth.uid
+        && get(docPath('posts', request.resource.data.postId)).data.expiresAt > request.time
+        && request.resource.data.createdAt == request.time
+        && getAfter(docPath('posts', request.resource.data.postId)).data.giftCount
+          == get(docPath('posts', request.resource.data.postId)).data.giftCount + 1;
+      allow update, delete: if false;
+    }
+
+    // ---- 通報（同じ対象へは1人1回。運営が Firebase コンソールで確認する） ----
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+          ['targetType', 'targetId', 'reporterUid', 'reason', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetType in ['seed', 'post']
+        && reportId == request.resource.data.targetType + '_' + request.resource.data.targetId + '_' + request.auth.uid
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 100
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if false;
+    }
+  }
+}

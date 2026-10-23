@@ -1,56 +1,106 @@
-# Welcome to your Expo app 👋
+# 吃音村Lite
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+吃音のある人が自分の苦労を種として育て、言葉を交わさずにねぎらい合う iPhone アプリです。
+仕様は [SPEC.md](SPEC.md) にあります。
 
-## Get started
+- Expo SDK 58（React Native）+ TypeScript + Expo Router
+- Firebase（Authentication / Cloud Firestore、JS SDK）
+- Firebase の匿名認証（テスト用。リリース前に Sign in with Apple に戻すかを決める）
 
-1. Install dependencies
+## フォルダ構成
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+  app/                    画面（Expo Router。ファイル＝画面）
+    _layout.tsx           サインイン → 村人登録 → 村 の切り替え
+    sign-in.tsx           村に入る（匿名でサインイン）
+    register.tsx          村人登録（利用規約・年齢への同意）
+    terms.tsx             利用規約
+    (app)/
+      _layout.tsx         手持ちのかご・贈り物のお知らせ・期限切れ投稿の片付け
+      (tabs)/             農園（index）・焚き火・砂漠
+      basket.tsx          手持ちのかご（受け取った贈り物の一覧）
+      settings.tsx        設定（ブロック一覧・規約・プライバシー・お問い合わせ・退会）
+      blocked.tsx         ブロック一覧
+  components/             画面の部品（seed-board は農園と砂漠で共通）
+  constants/              配色・カタログ・規約・連絡先などの設定値
+  lib/                    Firebase・Firestore の読み書き・NGワード
+  providers/              サインイン状態・手持ちのかご
+firestore.rules           セキュリティルール
+firestore.indexes.json    複合インデックス
+docs/privacy-policy.md    プライバシーポリシーの下書き
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## はじめて動かすまで
 
-### Other setup steps
+### 1. Firebase プロジェクト
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+1. [Firebase コンソール](https://console.firebase.google.com/)でプロジェクトを作る（Spark プランで可）。
+2. **Firestore Database** を作成（本番モード、リージョンは `asia-northeast1` など）。
+3. **Authentication → Sign-in method → 匿名** を有効にする。
+4. **プロジェクトの設定 → マイアプリ** でウェブアプリを追加し、表示された `firebaseConfig` の値を控える。
 
-## Learn more
+### 2. 環境変数
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cp .env.example .env.local
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+`.env.local` に手順1-4の値を入れます。
 
-## Join the community
+### 3. セキュリティルールとインデックス
 
-Join our community of developers creating universal apps.
+```bash
+firebase login
+firebase use --add            # 作ったプロジェクトを選ぶ
+firebase deploy --only firestore
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+インデックスの作成には数分かかります。それまでは一覧が読み込めません。
+
+### 4. 実機で動かす
+
+ネイティブモジュールは Expo Go に入っているものだけなので、まずは Expo Go で動きます。
+
+```bash
+npx expo start
+```
+
+EAS でビルドする場合、`.env.local` は git に入らないのでビルドには送られません。
+Firebase の値を EAS の環境変数にも登録してください（ウェブ用の設定値なので、アプリに埋め込まれても問題ありません）。
+
+```bash
+npx eas-cli@latest init
+npx eas-cli@latest env:create --environment preview --visibility plaintext \
+  --name EXPO_PUBLIC_FIREBASE_API_KEY --value ...   # 6つの値それぞれ
+npx eas-cli@latest build --profile preview --platform ios
+```
+
+## 確認コマンド
+
+```bash
+npx tsc --noEmit   # 型チェック
+npx expo lint      # リント
+```
+
+## 運営のしかた
+
+- **通報の確認**：Firebase コンソール → Firestore → `reports`。対象の `seeds` / `posts` を開き、
+  問題があれば削除するか `hidden` を `true` にする。通報3件で自動的に見えなくなります。
+- **NGワード**：`src/lib/moderation.ts` の `NG_WORDS`（連絡先は `CONTACT_PATTERNS`、危機対応は `CRISIS_WORDS`）に足す。
+- **作物・花を増やす**：`src/constants/catalog.ts` と `firestore.rules` の `cropIds()` / `flowerIds()` を両方変える。
+- **利用規約を改定する**：`src/constants/terms.ts` を直し、`src/constants/app-config.ts` の `TERMS_VERSION` を上げると、全員に再同意を求めます。
+- **Blaze プランに移ったら**：Firestore の TTL ポリシーを `posts` の `expiresAt` に設定する（`cleanUpMyExpiredPosts` は残しておいて問題ありません）。
+
+## リリース前に差し替えるもの
+
+- `src/constants/app-config.ts` の `CONTACT_EMAIL`（仮の値）と `PRIVACY_POLICY_URL`
+- `docs/privacy-policy.md` を仕上げて kitsuonmura.com に置く
+- アプリアイコン `assets/images/icon.png`（1024×1024）とスプラッシュ画像 `assets/images/splash-icon.png`（今は Expo の仮の絵）
+
+## 既知の制限
+
+- 手持ちの数はサーバーに保存せず記録から数えるため、「贈る」ときに手持ちが足りるかは端末側でしか確かめていません。
+  不正な改造アプリからは、持っていない作物を贈れてしまいます。気になるようになったら、Blaze プランで Cloud Functions に贈る処理を移してください。
+- 贈り物のお知らせはアプリを開いた時に表示します（プッシュ通知はありません）。
+- 匿名認証のアカウントは端末に結びつくため、アプリを削除すると同じ村人には戻れません。そのためサインアウトは置いていません。

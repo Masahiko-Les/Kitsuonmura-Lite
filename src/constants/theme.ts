@@ -1,65 +1,57 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
- */
-
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
+// Web版「吃音村」(KitsuonmuraWEBver2/src/app/globals.css) の配色をそのまま引き継ぐ。
 export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+  background: '#f6efe1',
+  foreground: '#3f3226',
+  paper: '#fbf6ea',
+  ink: '#4a3b2c',
+  ember: '#b5613a',
+  emberDark: '#8a4326',
+  leaf: '#5c7a4f',
+  border: '#d9c9a8',
+  parchment: '#f5e8cc',
+  timber: '#3f2c22',
+  gold: '#be8c4e',
+  sand: '#e9d3a6',
+  white: '#ffffff',
+  danger: '#b91c1c',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+/** `#rrggbb` に不透明度を足す（Tailwind の `text-village-ink/70` 相当）。 */
+export function alpha(hex: string, opacity: number) {
+  const a = Math.round(opacity * 255)
+    .toString(16)
+    .padStart(2, '0');
+  return `${hex}${a}`;
+}
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+// Web版は見出しに Shippori Mincho を使う。iOS に標準で入っているヒラギノ明朝で同じ雰囲気を出す。
+export const Fonts = {
+  serif: Platform.select({ ios: 'Hiragino Mincho ProN', default: 'serif' }),
+  sans: Platform.select({ ios: 'Hiragino Sans', default: undefined }),
+};
+
+/** 画面上部のヘッダー。Web版の羊皮紙色のヘッダーに合わせる。 */
+export const HeaderOptions = {
+  headerStyle: { backgroundColor: Colors.parchment },
+  headerTintColor: Colors.ink,
+  headerTitleStyle: { fontFamily: Fonts.serif, color: Colors.ink },
+  headerShadowVisible: false,
+  headerBackButtonDisplayMode: 'minimal',
+} as const;
 
 export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const Radius = {
+  card: 12,
+  pill: 999,
+  modal: 28,
+} as const;
