@@ -1,7 +1,7 @@
 // リリース前に必ず実際の値へ差し替えること（SPEC.md「安全・審査対応」）。
 
 /** 運営の連絡先。アプリ内「お問い合わせ」と審査情報に掲示する。 */
-export const CONTACT_EMAIL = 'TODO-contact@kitsuonmura.com';
+export const CONTACT_EMAIL = 'myriel.jp@gmail.com';
 
 /** kitsuonmura.com 上に置くプライバシーポリシー。下書きは docs/privacy-policy.md。 */
 export const PRIVACY_POLICY_URL = 'https://www.kitsuonmura.com/lite/privacy';

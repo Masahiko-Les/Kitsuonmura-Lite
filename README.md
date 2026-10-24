@@ -93,7 +93,7 @@ npx expo lint      # リント
 
 ## リリース前に差し替えるもの
 
-- `src/constants/app-config.ts` の `CONTACT_EMAIL`（仮の値）と `PRIVACY_POLICY_URL`
+- `src/constants/app-config.ts` の `PRIVACY_POLICY_URL`（kitsuonmura.com に置いた後のURLになっているか確認）
 - `docs/privacy-policy.md` を仕上げて kitsuonmura.com に置く
 - アプリアイコン `assets/images/icon.png`（1024×1024）とスプラッシュ画像 `assets/images/splash-icon.png`（今は Expo の仮の絵）
 
