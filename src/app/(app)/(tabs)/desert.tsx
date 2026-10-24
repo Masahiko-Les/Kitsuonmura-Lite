@@ -24,7 +24,6 @@ export default function DesertScreen() {
         ],
         plantedMessage: '頑張りましたね。\n砂漠に花が咲くのを待ちましょう。',
         emptyMessage: 'まだ種がありません。最初の種を植えてみませんか。',
-        fruitWord: '花',
         fruitVerb: '咲きました',
       }}
     />

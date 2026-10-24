@@ -12,7 +12,7 @@ import {
   SerifText,
 } from '@/components/ui';
 import { REPORT_HIDE_THRESHOLD } from '@/constants/app-config';
-import type { CatalogItem, SeedKind } from '@/constants/catalog';
+import { ALL_ITEMS, type CatalogItem, type SeedKind } from '@/constants/catalog';
 import { alpha, Colors, Radius, Spacing } from '@/constants/theme';
 import { useContentMenu } from '@/hooks/use-content-menu';
 import type { Seed } from '@/lib/types';
@@ -31,10 +31,23 @@ export interface SeedBoardCopy {
   fields: ComposerField[];
   plantedMessage: string;
   emptyMessage: string;
-  /** 実るものの呼び名（野菜・花）。 */
-  fruitWord: string;
   /** 「実りました」「咲きました」 */
   fruitVerb: string;
+}
+
+/**
+ * 種のカードの実り。まだ水やりがなければ「💧 0」、実ったら「🥔 1　🍅 2」のように種類ごとに出す。
+ * crops を数え始める前に実った分は何が実ったか分からないので、その分だけ「💧」で回数を出す。
+ */
+function harvestLabel(seed: Seed) {
+  if (seed.waterCount === 0) return '💧 0';
+  const crops = seed.crops ?? {};
+  const parts = ALL_ITEMS.filter((item) => (crops[item.id] ?? 0) > 0).map(
+    (item) => `${item.emoji} ${crops[item.id]}`,
+  );
+  const known = Object.values(crops).reduce((sum, count) => sum + count, 0);
+  if (seed.waterCount > known) parts.push(`💧 ${seed.waterCount - known}`);
+  return parts.join('　');
 }
 
 /** 農園と砂漠は「苦労／挑戦の種」と「実るもの」が違うだけなので、同じ画面を使い回す。 */
@@ -159,10 +172,7 @@ export function SeedBoard({ kind, copy }: { kind: SeedKind; copy: SeedBoardCopy 
                 <BodyText>{seed.text}</BodyText>
               )}
               <View style={styles.cardFooter}>
-                <MutedText>
-                  💧 {seed.waterCount}
-                  {seed.waterCount > 0 ? `　${copy.fruitWord}が${seed.waterCount}回${copy.fruitVerb}` : ''}
-                </MutedText>
+                <MutedText style={styles.harvest}>{harvestLabel(seed)}</MutedText>
                 {watered ? (
                   <MutedText style={styles.watered}>水やりしました</MutedText>
                 ) : (
@@ -252,6 +262,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.md,
     gap: Spacing.sm,
+  },
+  harvest: {
+    flexShrink: 1,
+    fontSize: 15,
   },
   watered: {
     fontSize: 12,

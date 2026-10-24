@@ -103,7 +103,11 @@ export async function waterSeed(uid: string, seed: Seed): Promise<CatalogItem> {
     cropId: crop.id,
     createdAt: serverTimestamp(),
   });
-  batch.update(doc(db, 'seeds', seed.id), { waterCount: increment(1) });
+  // 何が実ったかも種に数えておき、種のカードに「🥔 1　🍅 2」のように出す。
+  batch.update(doc(db, 'seeds', seed.id), {
+    waterCount: increment(1),
+    [`crops.${crop.id}`]: increment(1),
+  });
   await batch.commit();
   return crop;
 }

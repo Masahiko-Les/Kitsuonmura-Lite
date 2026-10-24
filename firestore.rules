@@ -46,6 +46,25 @@ service cloud.firestore {
       return text is string && text.size() >= 1 && text.size() <= maxLength;
     }
 
+    // 水やりの記録をこのバッチで新しく作った時だけ waterCount を1増やせる（1人1回）。
+    // 同時に、その水やりで実ったもの（cropId）の数を crops で1増やす。
+    function wateredNow(seedId) {
+      let wateringPath = docPath('waterings', seedId + '_' + request.auth.uid);
+      // && は左から順に評価して止まるので、水やりの記録があると分かってから中身を読む。
+      return onlyChanged(['waterCount', 'crops'])
+        && incrementedByOne('waterCount')
+        && !exists(wateringPath)
+        && existsAfter(wateringPath)
+        && cropIncremented(getAfter(wateringPath).data.cropId);
+    }
+
+    function cropIncremented(cropId) {
+      let before = resource.data.get('crops', {});
+      let after = request.resource.data.get('crops', {});
+      return after.diff(before).affectedKeys().hasOnly([cropId])
+        && after.get(cropId, 0) == before.get(cropId, 0) + 1;
+    }
+
     // 通報の記録をこのバッチで新しく作った時だけ reportCount を1増やせる（1人1回）。
     function reportedNow(targetType, targetId) {
       let reportId = targetType + '_' + targetId + '_' + request.auth.uid;
@@ -98,12 +117,7 @@ service cloud.firestore {
         && request.resource.data.reportCount == 0
         && request.resource.data.hidden == false;
       allow update: if signedIn() && (
-        (
-          onlyChanged(['waterCount'])
-          && incrementedByOne('waterCount')
-          && !exists(docPath('waterings', seedId + '_' + request.auth.uid))
-          && existsAfter(docPath('waterings', seedId + '_' + request.auth.uid))
-        )
+        wateredNow(seedId)
         || reportedNow('seed', seedId)
       );
       allow delete: if isSelf(resource.data.authorUid);

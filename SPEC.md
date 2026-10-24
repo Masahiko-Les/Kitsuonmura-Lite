@@ -60,7 +60,7 @@
 | コレクション | 主なフィールド | 備考 |
 | --- | --- | --- |
 | `users/{uid}` | createdAt, blockedUids[], termsVersion | Apple認証のuidで作成。名前は持たない。termsVersion は同意した規約の版 |
-| `seeds/{seedId}` | authorUid, kind（farm / desert）, text, response（砂漠のみ）, createdAt, waterCount, reportCount, hidden | 消えない。砂漠は text＝苦労したこと、response＝どう向き合ったか |
+| `seeds/{seedId}` | authorUid, kind（farm / desert）, text, response（砂漠のみ）, createdAt, waterCount, crops, reportCount, hidden | 消えない。砂漠は text＝苦労したこと、response＝どう向き合ったか。crops は実った作物・花ごとの数（例：{ tomato: 2 }）で、種のカードに「💧 0」または「🍅 2　🥔 1」と表示する |
 | `waterings/{seedId_uid}` | seedId, seedAuthorUid, waterUid, kind, cropId, createdAt | ドキュメントIDで1人1回を保証。自分の種にも可 |
 | `posts/{postId}` | authorUid, text, createdAt, expiresAt, giftCount, reportCount, hidden | expiresAt = createdAt + 24時間 |
 | `gifts/{giftId}` | postId, fromUid, toUid, itemId（tomato・sakura など）, createdAt | 受け取った側は燃え尽き後も一覧で見られる |
@@ -68,7 +68,7 @@
 
 - **表示ルール**：焚き火の一覧は `expiresAt > 現在時刻` かつ `hidden == false` かつ `reportCount < 3` の投稿だけを表示し、ブロックした人の投稿は端末側で除外する。
 - **期限切れの片付け**：無料プランの間は、投稿者がアプリを開いたときに自分の期限切れ投稿を削除する。Blazeプランに移行したら `expiresAt` にTTLポリシーを設定する。
-- **セキュリティルール**：種・投稿の作成と削除は本人のみ。waterCount・giftCount・reportCountは他人でも「1だけ増やす」操作のみ許可。本文の書き換えは不可。
+- **セキュリティルール**：種・投稿の作成と削除は本人のみ。waterCount・giftCount・reportCountは他人でも「1だけ増やす」操作のみ許可。crops は水やりと同時に、その水やりで実ったものだけ1増やせる。本文の書き換えは不可。
 
 ## 安全・審査対応
 

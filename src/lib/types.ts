@@ -19,6 +19,8 @@ export interface Seed {
   response?: string;
   createdAt: Timestamp | null;
   waterCount: number;
+  /** 実った作物・花の数（カタログの id → 数）。この項目ができる前に実った分は入っていない。 */
+  crops?: Record<string, number>;
   reportCount: number;
   hidden: boolean;
 }

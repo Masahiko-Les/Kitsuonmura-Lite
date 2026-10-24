@@ -13,7 +13,6 @@ export default function FarmScreen() {
         fields: [{ placeholder: '吃音の苦労を、種として植えてみましょう。', maxLength: SEED_MAX_LENGTH }],
         plantedMessage: 'いい苦労をしましたね。\nみんなで水やりして育てましょう。',
         emptyMessage: 'まだ種が植えられていません。最初の種を植えてみませんか。',
-        fruitWord: '野菜',
         fruitVerb: '実りました',
       }}
     />
