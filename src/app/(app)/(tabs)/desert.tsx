@@ -9,7 +9,7 @@ export default function DesertScreen() {
         title: '砂漠',
         icon: require('@/assets/images/facilities/desert.png'),
         description:
-          '吃音のことで苦労したことと、それにどう向き合ったかを、種として植える村の砂漠です。村人が水やりすると、乾いた大地に花が咲き、植えた人と水やりした人の両方に届きます。種は消えません。',
+          '砂漠は吃音村の生きづらさを象徴する場所です。吃音で苦労したこと、それにどう向き合ったかを「種」として蒔いて、みんなで応援の水やりをして、吃音村に花を咲かせていきましょう。',
         fields: [
           {
             label: '① 苦労したこと',

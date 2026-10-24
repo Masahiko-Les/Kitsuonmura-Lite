@@ -37,17 +37,15 @@ export interface SeedBoardCopy {
 
 /**
  * 種のカードの実り。まだ水やりがなければ「💧 0」、実ったら「🥔 1　🍅 2」のように種類ごとに出す。
- * crops を数え始める前に実った分は何が実ったか分からないので、その分だけ「💧」で回数を出す。
+ * crops を数え始める前に実った分は何が実ったか分からないので、数えない。
+ * 何が実ったか1つも分からない古い種だけは、空にならないよう「💧」で回数を出す。
  */
 function harvestLabel(seed: Seed) {
-  if (seed.waterCount === 0) return '💧 0';
   const crops = seed.crops ?? {};
   const parts = ALL_ITEMS.filter((item) => (crops[item.id] ?? 0) > 0).map(
     (item) => `${item.emoji} ${crops[item.id]}`,
   );
-  const known = Object.values(crops).reduce((sum, count) => sum + count, 0);
-  if (seed.waterCount > known) parts.push(`💧 ${seed.waterCount - known}`);
-  return parts.join('　');
+  return parts.length > 0 ? parts.join('　') : `💧 ${seed.waterCount}`;
 }
 
 /** 農園と砂漠は「苦労／挑戦の種」と「実るもの」が違うだけなので、同じ画面を使い回す。 */

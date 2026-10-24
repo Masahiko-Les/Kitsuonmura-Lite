@@ -20,7 +20,7 @@ export function GiftPicker({ post, onClose }: { post: Post | null; onClose: () =
     try {
       await sendGift(uid, post, itemId);
       onClose();
-      Alert.alert(`${name}を贈りました`, 'あなたからだとは伝わりません。');
+      Alert.alert(`${name}を贈りました。`);
     } catch (e) {
       console.warn(e);
       Alert.alert('贈れませんでした', 'ひとことが燃え尽きたか、通信がうまくいきませんでした。');

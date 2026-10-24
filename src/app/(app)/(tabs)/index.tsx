@@ -9,7 +9,7 @@ export default function FarmScreen() {
         title: '農園',
         icon: require('@/assets/images/facilities/garden.png'),
         description:
-          '吃音の苦労を、ひとことの種として植える村の農園です。村人が水やりすると、その場で野菜が実り、植えた人と水やりした人の両方に届きます。種は消えずに、水やりのたびに何度でも実ります。',
+          '吃音の苦労を「種」として植える農園です。村人が水やりをすると、作物が育ち、お互いに収穫物が得られます。収穫した野菜は、村人たちにあげることもできます。',
         fields: [{ placeholder: '吃音の苦労を、種として植えてみましょう。', maxLength: SEED_MAX_LENGTH }],
         plantedMessage: 'いい苦労をしましたね。\nみんなで水やりして育てましょう。',
         emptyMessage: 'まだ種が植えられていません。最初の種を植えてみませんか。',

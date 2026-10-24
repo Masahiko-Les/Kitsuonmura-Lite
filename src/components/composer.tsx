@@ -90,9 +90,6 @@ export function Composer({
           </MutedText>
         </View>
       ))}
-      <MutedText style={styles.notice}>
-        年齢・学校・住んでいる場所など、あなたが誰か分かることは書かないでください。
-      </MutedText>
       {error ? <MutedText style={styles.error}>{error}</MutedText> : null}
       <PillButton
         label={pending ? pendingLabel : submitLabel}
@@ -139,10 +136,6 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 12,
     textAlign: 'right',
-  },
-  notice: {
-    fontSize: 12,
-    lineHeight: 18,
   },
   error: {
     color: Colors.danger,
