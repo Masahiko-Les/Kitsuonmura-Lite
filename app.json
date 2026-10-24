@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#f6efe1",
     "ios": {
-      "bundleIdentifier": "com.kitsuonmura.lite",
+      "bundleIdentifier": "com.masahikofujita.kitsuonmuralite",
       "supportsTablet": false,
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
@@ -24,8 +24,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#f5e8cc",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120
+          "image": "./assets/images/facilities/garden.png",
+          "imageWidth": 220
         }
       ]
     ],

@@ -91,12 +91,6 @@ npx expo lint      # リント
 - **利用規約を改定する**：`src/constants/terms.ts` を直し、`src/constants/app-config.ts` の `TERMS_VERSION` を上げると、全員に再同意を求めます。
 - **Blaze プランに移ったら**：Firestore の TTL ポリシーを `posts` の `expiresAt` に設定する（`cleanUpMyExpiredPosts` は残しておいて問題ありません）。
 
-## リリース前に差し替えるもの
-
-- `src/constants/app-config.ts` の `PRIVACY_POLICY_URL`（kitsuonmura.com に置いた後のURLになっているか確認）
-- `docs/privacy-policy.md` を仕上げて kitsuonmura.com に置く
-- アプリアイコン `assets/images/icon.png`（1024×1024）とスプラッシュ画像 `assets/images/splash-icon.png`（今は Expo の仮の絵）
-
 ## 既知の制限
 
 - 手持ちの数はサーバーに保存せず記録から数えるため、「贈る」ときに手持ちが足りるかは端末側でしか確かめていません。
